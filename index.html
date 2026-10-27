@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AeroGlass Window Film™ — research and implementation programme</title>
+<meta name="description" content="A research and implementation programme for a peel-and-stick window film: falsifiable hypotheses, standards-based tests, an uncertainty-aware cost model and gated rollout for institutions and corporations.">
+<!--
+HOW TO ADAPT THIS PAGE
+- Text: every section is a <section id="..."> in <main>. Copy one, change the id, add a matching link in <nav id="toc">.
+- Colors: change the variables at the top of <style>. Dark mode follows the visitor's device setting.
+- Claims: edit the table in #evidence. Keep the status chip honest: "Design target" until independently tested.
+- Scene: the sunlight animation is in the script, block 1. Add new particle states in step() and draw().
+- Nothing is stored, tracked or sent anywhere. Keep it that way.
+-->
+<style>
+/* Color + type tokens: edit here to re-theme the whole page */
+:root{--bg:#eef5f5;--pane:#fff;--ink:#14323b;--mute:#4d6a72;--line:#c3d8da;--sun:#b87a00;--deep:#0f4a56;--chip:#e3efef}
+@media(prefers-color-scheme:dark){:root{--bg:#0b1c21;--pane:#12292f;--ink:#e4f2f3;--mute:#9ebcc1;--line:#264249;--sun:#f2b84b;--deep:#a9dde3;--chip:#183840}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+body{margin:0;background:var(--bg);color:var(--ink);font:1.0625rem/1.65 system-ui,-apple-system,"Segoe UI",sans-serif}
+h1,h2,h3{font-family:"Avenir Next","Century Gothic","Segoe UI",system-ui,sans-serif;font-weight:300;line-height:1.15;letter-spacing:-.01em}
+a{color:var(--deep)}
+:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+.skip{position:absolute;left:-999px}.skip:focus{left:1rem;top:1rem;background:var(--pane);padding:.5rem 1rem;z-index:9}
+
+/* Hero: the sunlight scene is the memorable element */
+.hero{display:grid;grid-template-columns:1fr 1.1fr;gap:2.5rem;align-items:center;max-width:1100px;margin:0 auto;padding:3rem 1.25rem 2rem}
+.hero h1{font-size:clamp(2.4rem,5.5vw,4.2rem);margin:0 0 .8rem}
+.lead{font-size:1.25rem}
+.scene{margin:0}
+.scene canvas{display:block;width:100%;aspect-ratio:4/3;border-radius:14px;background:linear-gradient(#8fcbe2,#eaf5ef);box-shadow:0 30px 60px -30px rgba(15,74,86,.55),0 2px 6px rgba(15,74,86,.2)}
+.scene figcaption{font-size:.92rem;color:var(--mute);margin-top:.8rem}
+.scene label{margin-right:1rem}
+.btn{display:inline-block;padding:.5rem 1rem;border-radius:8px;border:1px solid var(--deep);color:var(--deep);background:transparent;font:inherit;cursor:pointer;text-decoration:none}
+.btn.primary{background:var(--deep);color:var(--bg)}
+
+/* Layout: sticky table of contents + readable column */
+.wrap{display:grid;grid-template-columns:220px minmax(0,1fr);gap:2.5rem;max-width:1100px;margin:0 auto;padding:0 1.25rem}
+#toc{position:sticky;top:1rem;align-self:start;font-size:.95rem}
+#toc ol{list-style:none;margin:0;padding:0;border-left:2px solid var(--line)}
+#toc a{display:block;padding:.2rem .8rem;margin-left:-2px;color:var(--mute);text-decoration:none;border-left:2px solid transparent}
+#toc a[aria-current]{color:var(--ink);font-weight:600;border-left-color:var(--sun)}
+main{max-width:46rem}
+section{padding:2.2rem 0;border-top:1px solid var(--line);scroll-margin-top:1rem}
+h2{font-size:clamp(1.7rem,3vw,2.3rem);margin:0 0 .8rem}
+dt{font-weight:600;margin-top:1rem}dd{margin:.15rem 0 0}
+.chip{display:inline-block;font-size:.78rem;line-height:1.5;padding:0 .55rem;border-radius:999px;background:var(--chip);border:1px solid var(--line);color:var(--mute);white-space:nowrap}
+.note{border-left:4px solid var(--sun);background:var(--pane);padding:.8rem 1rem;border-radius:0 8px 8px 0}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.95rem}
+caption{text-align:left;color:var(--mute);padding-bottom:.4rem}
+th,td{text-align:left;padding:.55rem .6rem;border-bottom:1px solid var(--line);vertical-align:top}
+input[type=number],select{width:100%;max-width:11rem;font:inherit;padding:.35rem .5rem;border:1px solid var(--line);border-radius:6px;background:var(--pane);color:var(--ink)}
+.out{font-size:1.5rem;font-family:"Avenir Next","Segoe UI",system-ui,sans-serif;font-weight:300;margin:.6rem 0}
+code{word-break:break-all;background:var(--chip);padding:.1rem .35rem;border-radius:4px;font-size:.85rem}
+details{border-bottom:1px solid var(--line);padding:.6rem 0}summary{cursor:pointer;font-weight:600}
+footer{max-width:1100px;margin:2rem auto 0;padding:2rem 1.25rem 3rem;border-top:1px solid var(--line);font-size:.92rem;color:var(--mute)}
+@media(max-width:860px){
+ .hero,.wrap{grid-template-columns:1fr}
+ #toc{position:static}#toc ol{display:flex;gap:.3rem;overflow-x:auto;border-left:0}
+ #toc a{white-space:nowrap;border-left:0;margin:0}
+}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:.8rem;margin:1rem 0}
+.grid label{display:block;font-size:.9rem}
+.grid input,.grid select{display:block;margin-top:.2rem}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<!-- HERO: what the product is, plus a live (illustrative) sunlight scene -->
+<header class="hero">
+ <div>
+  <h1>AeroGlass Window Film™</h1>
+  <p class="lead">A research and implementation programme for a peel-and-stick window film that aims to cut heating and cooling energy, block UV and break down smog using sunlight.</p>
+  <p>Built for facilities teams, universities, municipalities and corporate real-estate groups: testable hypotheses, standards-based verification, an uncertainty-aware cost model and a gated rollout, so you can decide on evidence or stop early.</p>
+  <p><a class="btn primary" href="#model">Run the cost model</a> <a class="btn" href="#evidence">See the verification protocol</a></p>
+  <noscript><p class="note">The animation and savings explorer need JavaScript. All the text on this page works without it.</p></noscript>
+ </div>
+ <figure class="scene">
+  <canvas id="sky" role="img" aria-label="Animation: dark pollution specks drift toward a glass pane and glow clean when sunlight breaks them down."></canvas>
+  <figcaption>
+   <label>Sunlight <input id="sun" type="range" min="0" max="100" value="70"></label>
+   <button class="btn" id="pause" type="button" aria-pressed="false">Pause animation</button>
+   <p>Specks that reached the film and were broken down: <strong id="rate">–</strong>. Outdoor air is on the left, indoor air on the right. Drag the slider to see why light matters. This illustrates the design goal; it is not measured data.</p>
+  </figcaption>
+ </figure>
+</header>
+
+<div class="wrap">
+<!-- TABLE OF CONTENTS: highlights the section you are reading -->
+<nav id="toc" aria-label="Table of contents">
+ <ol>
+  <li><a href="#overview">Overview</a></li>
+  <li><a href="#features">Core features</a></li>
+  <li><a href="#how">How it works</a></li>
+  <li><a href="#make">Making it at scale</a></li>
+  <li><a href="#uses">Use cases</a></li>
+  <li><a href="#impact">Environmental impact</a></li>
+  <li><a href="#evidence">Verification protocol</a></li>
+  <li><a href="#model">Cost model</a></li>
+  <li><a href="#pilot">Pilot design</a></li>
+  <li><a href="#rollout">Rollout gates</a></li>
+  <li><a href="#risks">Risk register</a></li>
+  <li><a href="#faq">Honest questions</a></li>
+  <li><a href="#contact">Contact</a></li>
+ </ol>
+</nav>
+
+<main id="main">
+
+<section id="overview">
+ <h2>Overview</h2>
+ <p>AeroGlass Window Film™ is a peel-and-stick upgrade for windows. It is meant to save energy, protect interiors, and clean the air when sunlight reaches it.</p>
+ <p>It pairs a heat-reflecting layer with a coating of titanium dioxide (TiO₂) and graphene. In everyday terms: a catalyst that uses light to break down smog ingredients (nitrogen oxides, volatile organic compounds and other organic pollutants), while the film lowers heating and cooling bills.</p>
+ <p class="note"><strong>How to use this page.</strong> Every number carries a status label, so you can tell a goal from a proven result (see Verification protocol). Use the contents list to jump around. Nothing you do here is stored or sent anywhere.</p>
+</section>
+
+<section id="features">
+ <h2>Core features</h2>
+ <dl>
+  <dt>Heat control <span class="chip">Design target</span></dt>
+  <dd>Reflects up to 70% of solar heat in summer and is meant to help hold indoor heat in winter.</dd>
+  <dt>Smog and VOC breakdown <span class="chip">Needs testing</span></dt>
+  <dd>The photocatalytic layer is designed to turn pollutants into harmless by-products when sunlight reaches it.</dd>
+  <dt>UV protection <span class="chip">Design target</span></dt>
+  <dd>Blocks 99% of UV rays, which protects furnishings and skin.</dd>
+  <dt>Quick installation</dt>
+  <dd>Peel-and-stick, made to fit any flat glass surface.</dd>
+  <dt>Long-lasting <span class="chip">Design target</span></dt>
+  <dd>Each application is expected to last 5–10 years before it needs replacing.</dd>
+ </dl>
+</section>
+
+<section id="how">
+ <h2>How it works</h2>
+ <p>Think of the film as four jobs happening in order as sunlight arrives:</p>
+ <ol>
+  <li><strong>Solar-selective layer.</strong> Reflects infrared (heat) while letting visible light through, so rooms stay bright but cooler.</li>
+  <li><strong>Photocatalytic nanocoating (TiO₂ + graphene).</strong> Uses light to break down NOx, VOCs and other organic pollutants that touch it.</li>
+  <li><strong>Thermal buffer.</strong> A thin insulating layer that slows heat loss through the glass.</li>
+  <li><strong>Self-cleaning surface.</strong> Reduces dust and grime build-up, so there is little to maintain.</li>
+ </ol>
+</section>
+
+<section id="make">
+ <h2>Making it at scale</h2>
+ <h3>Materials</h3>
+ <ul>
+  <li>Transparent PET (or a similar polymer) film.</li>
+  <li>A TiO₂–graphene composite nanolayer.</li>
+  <li>A low-VOC adhesive for peel-and-stick application.</li>
+ </ul>
+ <div class="scroll"><table>
+  <caption>Per kit (covers 2–4 windows)</caption>
+  <tr><th scope="row">Production cost</th><td>$10–$20</td></tr>
+  <tr><th scope="row">Retail price</th><td>$40–$100</td></tr>
+ </table></div>
+ <p>The film is designed to be made on existing window-film production lines. It would reach people through home improvement stores, online retailers and office supply chains.</p>
+</section>
+
+<section id="uses">
+ <h2>Use cases</h2>
+ <dl>
+  <dt>Homes and apartments</dt><dd>Lower energy bills and less pollution indoors. Renters can use it because it peels off.</dd>
+  <dt>Office buildings</dt><dd>Healthier air for staff and lower running costs.</dd>
+  <dt>Urban high-rises</dt><dd>Reduce the smog impact of dense towers while improving building efficiency.</dd>
+  <dt>Humanitarian deployments</dt><dd>Relief in polluted cities and heatwave-prone regions.</dd>
+ </dl>
+</section>
+
+<section id="impact">
+ <h2>Environmental impact</h2>
+ <ul>
+  <li>Aims to cut heating and cooling energy by 20–35%, which lowers carbon emissions <span class="chip">Design target</span></li>
+  <li>Uses only sunlight to break down urban pollutants at the molecular level <span class="chip">Needs testing</span></li>
+  <li>Blocks UV damage, so interior furnishings last longer and create less waste <span class="chip">Design target</span></li>
+  <li>Intended to be fully recyclable at end of life <span class="chip">Needs testing</span></li>
+ </ul>
+</section>
+
+
+
+
+
+
+<section id="evidence">
+ <h2>Verification protocol</h2>
+ <p>Each performance claim is a falsifiable hypothesis with an acceptance rule agreed before testing. Register the rules, then publish results whether or not they succeed.</p>
+ <div class="scroll"><table>
+  <caption>Hypotheses, methods and proposed decision rules</caption>
+  <thead><tr><th>Hypothesis</th><th>Project target</th><th>Method</th><th>Proposed decision rule</th></tr></thead>
+  <tbody>
+   <tr><td>H1 Solar heat rejection</td><td>Up to 70% of solar heat reflected</td><td>Film-on-glass spectral scans (NFRC 300 or ASTM E903), then SHGC and U-factor (NFRC 200 and 100), for each glass type.</td><td>Accept per glass type only if the 95% interval’s lower bound meets the claim; otherwise restate it.</td></tr>
+   <tr><td>H2 UV blocking</td><td>99% blocked</td><td>UV transmittance from spectral scans (ISO 9050).</td><td>Accept if the interval’s lower bound is at or above 99%.</td></tr>
+   <tr><td>H3 Pollutant removal</td><td>Smog, NOx and VOCs broken down by sunlight</td><td>ISO 22197-1, -2 and -4 (NO, acetaldehyde, formaldehyde) and ISO 17168-1 for indoor light, repeated behind glass at realistic irradiance and humidity. Log NO₂, nitrous acid and formaldehyde release.</td><td>Accept an air-cleaning claim only if net removal is positive after by-products at realistic light.</td></tr>
+   <tr><td>H4 Energy savings</td><td>20–35% less heating and cooling energy</td><td>IPMVP Option B or C with matched control zones and degree-day normalisation. Judge model fit with ASHRAE Guideline 14 (CV(RMSE), NMBE).</td><td>Accept if the savings interval excludes zero and the model fit passes. Report by climate and orientation.</td></tr>
+   <tr><td>H5 Durability</td><td>5–10 years</td><td>Accelerated weathering (ASTM G154 or G155), adhesion (ASTM D3359) and abrasion. Track photocatalytic activity and visible transmittance.</td><td>Example: at least 80% of activity kept and visible transmittance within 5% at the claimed life.</td></tr>
+  </tbody>
+ </table></div>
+ <p class="note">Treat the decision rules as starting points and agree them with your evaluator first. Standard photocatalysis tests use UV-A lamps, but light behind glass is weaker and filtered, so a standard-test result alone does not transfer to a window.</p>
+</section>
+
+<section id="model">
+ <h2>Cost model</h2>
+ <p>A Monte Carlo model (4,000 runs, in your browser) estimates net present value (NPV) over the film’s life. Savings follow a triangular distribution and film life is drawn from 5, 7 and 10 years, so uncertainty stays visible. Defaults are placeholders, not project data. Replace them with your quotes and tariffs.</p>
+ <p><label for="scn">Savings scenario</label> <select id="scn"><option value="5,15,35">Wide prior, 5–35%</option><option value="20,27,35">Project target, 20–35%</option><option value="5,12,20">Conservative, 5–20%</option></select></p>
+ <div class="grid">
+  <label>Treated glazing (m²)<input id="area" type="number" min="0" value="500"></label>
+  <label>Installed cost ($/m²)<input id="cost" type="number" min="0" value="30"></label>
+  <label>Yearly HVAC spend in treated zones ($)<input id="spend" type="number" min="0" value="40000"></label>
+  <label>Savings, minimum (%)<input id="fmin" type="number" min="0" max="100" value="5"></label>
+  <label>Savings, most likely (%)<input id="fmode" type="number" min="0" max="100" value="15"></label>
+  <label>Savings, maximum (%)<input id="fmax" type="number" min="0" max="100" value="35"></label>
+  <label>Discount rate (%)<input id="disc" type="number" min="0" value="6"></label>
+  <label>Energy price growth (%/yr)<input id="esc" type="number" min="0" value="2"></label>
+  <label>Performance decay (%/yr)<input id="dec" type="number" min="0" value="3"></label>
+ </div>
+ <p><button class="btn" id="reset" type="button">Reset to defaults</button></p>
+ <div class="note" id="mout" aria-live="polite"></div>
+</section>
+
+<section id="pilot">
+ <h2>Pilot design</h2>
+ <p>Pair weather-normalised before-and-after data with matched control zones, such as an untreated facade or floor with similar orientation and use. This separates the film’s effect from weather, occupancy and regression to the mean. The sample size for a paired comparison is:</p>
+ <div class="grid">
+  <label>Smallest effect worth detecting (% points of baseline)<input id="pd" type="number" min="0" step="0.5" value="5"></label>
+  <label>Spread of paired differences (SD, % of baseline)<input id="ps" type="number" min="0" step="0.5" value="12"></label>
+  <label>Significance level, two-sided<select id="pa"><option value="0.1">10%</option><option value="0.05" selected>5%</option><option value="0.01">1%</option></select></label>
+  <label>Statistical power<select id="pp"><option value="0.8" selected>80%</option><option value="0.9">90%</option><option value="0.95">95%</option></select></label>
+ </div>
+ <p class="out" id="pout" aria-live="polite"></p>
+ <p class="note">This assumes independent observations. Energy data are autocorrelated, so treat the result as a minimum. Pre-register the analysis plan, publish raw meter data and report null results.</p>
+</section>
+
+<section id="rollout">
+ <h2>Rollout gates</h2>
+ <p>Money and scope grow only when a gate’s exit criteria are met. Stopping at a gate is a valid, successful outcome.</p>
+ <div class="scroll"><table>
+  <caption>Phase-gated implementation plan</caption>
+  <thead><tr><th>Gate</th><th>Work</th><th>Exit criteria</th><th>Who</th></tr></thead>
+  <tbody>
+   <tr><td>0. Fit check</td><td>Screen sites by glass type, orientation, climate and code. Run the cost model with real tariffs.</td><td>Median NPV above zero, and no glazing excluded by the glass maker or code.</td><td>Facilities, energy manager</td></tr>
+   <tr><td>1. Lab verification</td><td>Run H1–H5 at an accredited lab, including realistic indoor light and by-product measurement.</td><td>Every hypothesis meets its agreed rule, or the claim is restated.</td><td>Independent lab, project lead</td></tr>
+   <tr><td>2. Instrumented pilot</td><td>Install on test zones with matched controls and sub-metering for a full heating and cooling season. Candidate climates from the original plan: Los Angeles, Beijing, Delhi.</td><td>Savings interval, model fit and indoor air results published, with no safety incidents.</td><td>Facilities, evaluator, installer</td></tr>
+   <tr><td>3. Staged scale-up</td><td>Roll out by facade and building type. Keep a control group and re-verify yearly.</td><td>Realised savings fall within the forecast band, and failures and complaints are tracked and resolved.</td><td>Procurement, facilities</td></tr>
+  </tbody>
+ </table></div>
+ <p>Smart films that combine dynamic tinting with air cleaning are a future extension and sit outside these gates.</p>
+</section>
+
+<section id="risks">
+ <h2>Risk register</h2>
+ <div class="scroll"><table>
+  <caption>Main risks and how to reduce them</caption>
+  <thead><tr><th>Risk</th><th>Why it matters</th><th>Mitigation</th></tr></thead>
+  <tbody>
+   <tr><td>Glass thermal stress and warranties</td><td>Films can raise glass temperature and crack some double-pane or low-E units.</td><td>Get the glass maker’s written approval for each glass type. Start with approved units.</td></tr>
+   <tr><td>Harmful by-products</td><td>Incomplete oxidation can release NO₂, nitrous acid or formaldehyde indoors.</td><td>Measure by-products at realistic light and humidity. Make no air-cleaning claim without net benefit.</td></tr>
+   <tr><td>UV filtered by glass</td><td>TiO₂ relies mainly on UV, which glass and the film itself reduce.</td><td>Test behind glass and report activity at realistic irradiance.</td></tr>
+   <tr><td>Weak evidence of savings</td><td>Weather, occupancy and regression to the mean can mimic or hide savings.</td><td>Use matched controls, weather normalisation, a pre-registered plan and published data.</td></tr>
+   <tr><td>Overstated claims</td><td>Over-claiming harms occupants and the buyer’s reputation.</td><td>Use the status labels here, and require evidence before any marketing claim.</td></tr>
+   <tr><td>Daylight, glare and fire code</td><td>Tint and reflectance affect comfort and may affect compliance.</td><td>Measure visible transmittance and reflectance. Check surface-burning classification where required.</td></tr>
+   <tr><td>End of life</td><td>Coated PET with adhesive may not recycle cleanly.</td><td>Run a separation trial and publish it before claiming recyclability.</td></tr>
+   <tr><td>Data and privacy</td><td>Metering and occupancy data can reveal behaviour.</td><td>Collect building-level data only, share aggregates, and never use it to monitor individuals.</td></tr>
+  </tbody>
+ </table></div>
+</section>
+
+<section id="faq">
+ <h2>Honest questions</h2>
+ <details><summary>The film blocks UV. How can its coating still clean air?</summary>
+  <p>TiO₂ is mainly switched on by ultraviolet light, and window glass already filters much of it. Graphene blends are studied as a way to respond to visible light too. Whether that is strong enough behind glass is exactly what Phase 1 testing must show.</p></details>
+ <details><summary>Will it make my home darker, or colder in winter?</summary>
+  <p>The aim is to keep visible light clear. Any heat-reflecting film can reduce free winter sun, so the net winter effect depends on your climate. That is why savings are shown as a range.</p></details>
+ <details><summary>What happens to the pollutants it breaks down?</summary>
+  <p>The goal is simple, harmless compounds. Partial breakdown can leave other compounds behind, so by-product testing comes before any air-cleaning claim.</p></details>
+ <details><summary>Is it safe on all windows?</summary>
+  <p>Films can add heat stress to some double-pane or low-E glass. Check your window maker’s guidance before installing.</p></details>
+ </section>
+
+
+<section id="contact">
+ <h2>Contact</h2>
+ <p><strong>GitHub:</strong> <a href="https://github.com/TheRickyFoster" rel="noopener">github.com/TheRickyFoster</a></p>
+ <p>To propose a pilot, start a conversation there with the building type, glazed area, glass type, climate, available metering and the decision you need to make. Institutions, labs and installers are all welcome.</p>
+</section>
+
+</main>
+</div>
+
+<footer>
+ <p><strong>Zero Harm &amp; Anti-Coercion.</strong> This page exists to support informed, voluntary decisions. It has no tracking, analytics, cookies or hidden telemetry, and nothing entered here leaves your browser. Do not use these materials to pressure, mislead, surveil or target anyone. Figures are goals until independently verified, and the calculators are decision aids, not guarantees.</p>
+</footer>
+
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s)};
+/* Each feature runs on its own, so one failure never breaks the page (fail-safe startup). */
+function safe(n,f){try{f()}catch(e){console.warn('Optional feature skipped: '+n)}}
+
+/* 1. SUNLIGHT SCENE. Pollution specks drift to the pane. With enough sun they break down and glow clean; otherwise they bounce back. */
+safe('scene',function(){
+ var c=$('#sky'),g=c.getContext('2d'),sl=$('#sun'),pb=$('#pause'),rt=$('#rate');
+ if(!g)return;
+ var W=0,H=0,px=0,P=[],sun=.7,ok=0,tot=0,raf=0,last=0,slow=0,vis=true;
+ var on=!matchMedia('(prefers-reduced-motion: reduce)').matches; /* respects the visitor's motion setting */
+ function mk(){return{x:Math.random()*px*.9,y:Math.random()*H,r:1.2+Math.random()*2.6,vx:.3+Math.random()*.5,vy:(Math.random()-.5)*.2,s:0,a:1,f:0}}
+ function size(){
+  var d=Math.min(window.devicePixelRatio||1,2);
+  W=c.clientWidth;H=c.clientHeight;if(!W||!H)return;
+  c.width=W*d;c.height=H*d;g.setTransform(d,0,0,d,0,0);px=W*.55;
+  /* Adaptive quality: fewer specks on small or low-power devices */
+  var n=Math.max(24,Math.min(70,Math.round(W/9)));
+  if((navigator.hardwareConcurrency||4)<4)n=Math.round(n*.6);
+  P=[];for(var i=0;i<n;i++)P.push(mk());
+  if(!on)for(var j=0;j<150;j++)step();
+  draw();
+ }
+ function draw(){
+  var i,k,p;
+  g.clearRect(0,0,W,H);g.globalCompositeOperation='source-over';
+  var s=g.createRadialGradient(W*.92,-H*.05,0,W*.92,-H*.05,W*.95); /* sun glow */
+  s.addColorStop(0,'rgba(255,226,140,'+(.15+.6*sun)+')');s.addColorStop(1,'rgba(255,226,140,0)');
+  g.fillStyle=s;g.fillRect(0,0,W,H);
+  g.fillStyle='rgba(255,236,190,'+(.08+.22*sun)+')';g.fillRect(px,0,W-px,H); /* warm light indoors */
+  g.globalCompositeOperation='lighter';g.fillStyle='rgba(255,240,190,'+(.03+.07*sun)+')'; /* light shafts */
+  for(k=0;k<3;k++){g.beginPath();g.moveTo(W*(.8+k*.07),0);g.lineTo(W*(.95+k*.07),0);g.lineTo(W*(.2+k*.16),H);g.lineTo(W*(.05+k*.16),H);g.fill()}
+  g.globalCompositeOperation='source-over'; /* the glass pane */
+  var q=g.createLinearGradient(px-9,0,px+9,0);
+  q.addColorStop(0,'rgba(210,245,250,.15)');q.addColorStop(.5,'rgba(235,252,255,.55)');q.addColorStop(1,'rgba(210,245,250,.15)');
+  g.fillStyle=q;g.fillRect(px-9,0,18,H);g.fillStyle='rgba(255,255,255,.8)';g.fillRect(px-.5,0,1,H);
+  for(i=0;i<P.length;i++){p=P[i];
+   if(p.f>0){g.globalCompositeOperation='lighter';g.fillStyle='rgba(180,255,235,'+(.5*p.f)+')';g.beginPath();g.arc(px,p.y,14*p.f+4,0,6.283);g.fill()}
+   if(p.s==1){g.globalCompositeOperation='lighter';g.fillStyle='rgba(110,235,205,'+(.35*p.a)+')';g.beginPath();g.arc(p.x,p.y,p.r*3.2,0,6.283);g.fill();
+    g.fillStyle='rgba(240,255,250,'+p.a+')';g.beginPath();g.arc(p.x,p.y,p.r*.9,0,6.283);g.fill()}
+   else{g.globalCompositeOperation='source-over';g.fillStyle='rgba(72,62,54,'+(.6*p.a)+')';g.beginPath();g.arc(p.x,p.y,p.r,0,6.283);g.fill()}
+  }
+  g.globalCompositeOperation='source-over';
+ }
+ function report(){rt.textContent=tot?Math.round(100*ok/tot)+'%':'–'}
+ function step(){
+  for(var i=0;i<P.length;i++){var p=P[i],ox=p.x;
+   p.x+=p.vx;p.y+=p.vy+Math.sin((p.x+p.r*40)/38)*.12;
+   if(p.f>0)p.f-=.04;
+   if(p.s==0&&ox<px&&p.x>=px){tot++;if(Math.random()<sun){p.s=1;p.f=1;ok++}else{p.s=2;p.vx=-Math.abs(p.vx)}report()}
+   if(p.s==1)p.a-=.003;
+   if(p.a<=0||p.x>W+8||p.x<-8||p.y<-8||p.y>H+8)P[i]=mk();
+  }
+ }
+ function loop(t){raf=0;if(!on||!vis||document.hidden)return;
+  if(last&&t-last>40)slow++;else if(slow>0)slow--;last=t;
+  if(slow>30&&P.length>20){P.length=Math.floor(P.length*.6);slow=0} /* slow device: lower the detail */
+  step();draw();raf=requestAnimationFrame(loop)}
+ function kick(){last=0;if(!raf&&on&&vis&&!document.hidden)raf=requestAnimationFrame(loop)}
+ sl.addEventListener('input',function(){sun=sl.value/100;ok=tot=0;report();draw()});
+ pb.addEventListener('click',function(){on=!on;pb.textContent=on?'Pause animation':'Play animation';pb.setAttribute('aria-pressed',String(!on));if(on)kick()});
+ document.addEventListener('visibilitychange',kick);
+ if(window.IntersectionObserver)new IntersectionObserver(function(e){vis=e[0].isIntersecting;kick()}).observe(c);
+ if(window.ResizeObserver)new ResizeObserver(function(){size()}).observe(c);else window.addEventListener('resize',size);
+ size();
+ if(on)kick();else{pb.textContent='Play animation';pb.setAttribute('aria-pressed','true')}
+});
+
+/* 2. COST MODEL: Monte Carlo over the uncertain inputs. Defaults are placeholders. Extend: add a row to the sensitivity list. */
+safe('model',function(){
+ var def={area:500,cost:30,spend:40000,fmin:5,fmode:15,fmax:35,disc:6,esc:2,dec:3};
+ function num(i){return parseFloat($('#'+i).value)}
+ function set(k,v){$('#'+k).value=v}
+ function d(x){return (x<0?'-$':'$')+Math.abs(Math.round(x)).toLocaleString()}
+ function tri(a,m,b){var u=Math.random(),c=(m-a)/(b-a);return u<c?a+Math.sqrt(u*(b-a)*(m-a)):b-Math.sqrt((1-u)*(b-a)*(b-m))}
+ function npv(f,L,p){var t,s=0;for(t=1;t<=L;t++)s+=p.spend*f*Math.pow(1+p.esc,t-1)*Math.pow(1-p.dec,t-1)/Math.pow(1+p.disc,t);return s-p.area*p.cost}
+ function run(){
+  var p={area:num('area'),cost:num('cost'),spend:num('spend'),disc:num('disc')/100,esc:num('esc')/100,dec:num('dec')/100},
+  a=num('fmin')/100,m=num('fmode')/100,b=num('fmax')/100,o=$('#mout'),
+  bad=[p.area,p.cost,p.spend,p.disc,p.esc,p.dec].some(function(x){return !(x>=0)});
+  if(bad||!(a<b&&a<=m&&m<=b)){o.textContent='Check the inputs: use non-negative numbers, with minimum ≤ most likely ≤ maximum and minimum below maximum.';return}
+  var N=4000,r=[],pos=0,i,x;
+  for(i=0;i<N;i++){x=npv(tri(a,m,b),Math.round(tri(5,7,10)),p);r.push(x);if(x>0)pos++}
+  r.sort(function(u,v){return u-v});
+  function q(z){return r[Math.floor(z*(N-1))]}
+  function at(f,L,c,e,k){return npv(f,L,{area:p.area,cost:c,spend:p.spend,disc:p.disc,esc:e,dec:k})}
+  var sw=[['Savings fraction',at(a,7,p.cost,p.esc,p.dec),at(b,7,p.cost,p.esc,p.dec)],
+   ['Film life, 5 to 10 years',at(m,5,p.cost,p.esc,p.dec),at(m,10,p.cost,p.esc,p.dec)],
+   ['Installed cost, +30% to -30%',at(m,7,p.cost*1.3,p.esc,p.dec),at(m,7,p.cost*.7,p.esc,p.dec)],
+   ['Energy price growth, 0 to 4%',at(m,7,p.cost,0,p.dec),at(m,7,p.cost,.04,p.dec)],
+   ['Performance decay, 6% to 0%',at(m,7,p.cost,p.esc,.06),at(m,7,p.cost,p.esc,0)]];
+  sw.sort(function(u,v){return Math.abs(v[2]-v[1])-Math.abs(u[2]-u[1])});
+  var ann=p.spend*m,pb=ann>0?p.area*p.cost/ann:Infinity;
+  o.innerHTML='<p>Most likely annual saving: <strong>'+d(ann)+'</strong>. Simple payback: <strong>'+(pb<=15?pb.toFixed(1)+' years':'over 15 years')+'</strong>.</p>'
+   +'<p>NPV over the film’s life: P10 '+d(q(.1))+', median <strong>'+d(q(.5))+'</strong>, P90 '+d(q(.9))+'. Chance NPV is positive: <strong>'+Math.round(100*pos/N)+'%</strong>.</p>'
+   +'<p>What moves the answer most (NPV range, one input at a time):</p><ol>'+sw.map(function(s){return '<li>'+s[0]+': '+d(Math.min(s[1],s[2]))+' to '+d(Math.max(s[1],s[2]))+'</li>'}).join('')+'</ol>';
+ }
+ $('#scn').addEventListener('input',function(){var s=this.value.split(',');set('fmin',s[0]);set('fmode',s[1]);set('fmax',s[2]);run()});
+ Object.keys(def).forEach(function(k){$('#'+k).addEventListener('input',run)});
+ $('#reset').addEventListener('click',function(){Object.keys(def).forEach(function(k){set(k,def[k])});$('#scn').selectedIndex=0;run()});
+ run();
+});
+
+/* 2b. PILOT SIZING: paired comparison, n = ((z_alpha/2 + z_beta) * SD / effect)^2 + z_alpha/2^2 / 2. */
+safe('pilot',function(){
+ var ZA={'0.1':1.645,'0.05':1.96,'0.01':2.576},ZB={'0.8':.8416,'0.9':1.2816,'0.95':1.645};
+ function run(){
+  var e=parseFloat($('#pd').value),sd=parseFloat($('#ps').value),za=ZA[$('#pa').value],zb=ZB[$('#pp').value],o=$('#pout');
+  if(!(e>0&&sd>0)){o.textContent='Enter an effect size and a spread above zero.';return}
+  o.textContent='About '+Math.ceil(Math.pow((za+zb)*sd/e,2)+za*za/2)+' matched pairs (for example zone-weeks) are needed.';
+ }
+ ['pd','ps','pa','pp'].forEach(function(k){$('#'+k).addEventListener('input',run)});
+ run();
+});
+
+/* 3. TABLE OF CONTENTS. Marks the section you are reading. */
+safe('toc',function(){
+ if(!window.IntersectionObserver)return;
+ var links=[].slice.call(document.querySelectorAll('#toc a')),map={};
+ links.forEach(function(a){map[a.getAttribute('href').slice(1)]=a});
+ var io=new IntersectionObserver(function(es){es.forEach(function(e){
+  if(e.isIntersecting&&map[e.target.id]){links.forEach(function(a){a.removeAttribute('aria-current')});map[e.target.id].setAttribute('aria-current','true')}
+ })},{rootMargin:'-20% 0px -70% 0px'});
+ document.querySelectorAll('main section[id]').forEach(function(s){io.observe(s)});
+});
+
+})();
+</script>
+</body>
+</html>
